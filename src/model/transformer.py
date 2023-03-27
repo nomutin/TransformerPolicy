@@ -1,3 +1,4 @@
+import copy
 import math
 from typing import Dict, List
 
@@ -7,6 +8,7 @@ from pytorch_lightning.utilities.types import STEP_OUTPUT
 from torch import nn
 
 from .base import PolicyBase
+from .distributions import GMM
 
 
 class PositionalEncoder(nn.Module):
@@ -56,7 +58,7 @@ class PositionalEncoder(nn.Module):
         self.register_buffer("pe", pe.transpose(0, 1))
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        x = x + self.pe[: x.size(1)]  # type: ignore
+        x = x + self.pe[:, : x.size(1)]  # type: ignore
         return self.dropout(x)
 
 
@@ -134,6 +136,19 @@ class GPTLayer(nn.Module):
         return self.feed_forward(x)
 
 
+class GPT(nn.Module):
+    def __init__(self, decoder_layer: nn.Module, num_layers: int) -> None:
+        super().__init__()
+        self.layers = _get_clones(decoder_layer, num_layers)
+        self.num_layers = num_layers
+
+    def forward(self, tgt: torch.Tensor) -> torch.Tensor:
+        output = tgt
+        for mod in self.layers:
+            output = mod(output)
+        return output
+
+
 class TransformerPolicy(PolicyBase):
     """
     Policy with Transformer Encoder and GMM (`a_t ~ π (a_t ~ | a_{1:t-1})`).
@@ -147,6 +162,19 @@ class TransformerPolicy(PolicyBase):
         self.positional_encoder = PositionalEncoder(
             d_model=self.cfg.hidden_size, max_seq_len=self.cfg.max_seq_len
         )
+        decoder_layer = GPTLayer(
+            d_model=self.cfg.hidden_size,
+            nhead=self.cfg.gpt_num_heads,
+            dim_feedforward=self.cfg.gpt_ff_dim,
+        )
+        self.gpt_layers = _get_clones(decoder_layer, self.cfg.gpt_num_layers)
+
+    def forward(self, x: torch.Tensor) -> GMM:
+        x = self.input_embedding_layer(x)
+        x = self.positional_encoder(x)
+        for mod in self.gpt_layers:
+            x = mod(x)
+        return self.hidden_to_gmm(x)
 
     def training_step(self, batch: List, **kwargs: Dict) -> STEP_OUTPUT:
         inputs, targets = batch
@@ -154,3 +182,7 @@ class TransformerPolicy(PolicyBase):
         loss = self.calc_loss(outputs, targets)
         self.training_step_outputs.append(loss)
         return loss
+
+
+def _get_clones(module: nn.Module, N: int) -> nn.ModuleList:
+    return nn.ModuleList([copy.deepcopy(module) for _ in range(N)])

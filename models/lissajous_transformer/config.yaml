@@ -1,0 +1,40 @@
+epoch: 3000
+patience: 1000
+accelerator: cpu
+devices: 1
+
+model: TransformerPolicy
+datamodule: LissajousDataModule
+
+dataset_config:
+    data_num: 100
+    points_num: 51
+    round_times: 2
+    noise_std: 0.1
+    batch_size: 20
+
+model_config:
+    input_size: 2
+    hidden_size: 32
+    gpt_num_heads: 4
+    gpt_ff_dim: 64
+    gpt_num_layers: 4
+    max_seq_len: 256
+    output_size: 2
+    num_hidden_layers: 1
+    activation: ReLU
+    out_activation: Identity
+    num_mix: 2
+    optimizer: Adam
+    lr: 1.0e-3
+
+test:
+    open:
+        batch_indices:
+            - 10
+            - 20
+            - 30
+    closed:
+        generation_length: 150
+        batch_indices:
+            - 10
