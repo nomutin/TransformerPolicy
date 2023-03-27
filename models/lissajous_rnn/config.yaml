@@ -8,14 +8,14 @@ datamodule: LissajousDataModule
 
 dataset_config:
     data_num: 100
-    points_num: 50
+    points_num: 51
     round_times: 2
     noise_std: 0.1
     batch_size: 20
 
 model_config:
     input_size: 2
-    hidden_size: 16
+    hidden_size: 32
     output_size: 2
     num_hidden_layers: 1
     activation: ReLU
@@ -23,3 +23,14 @@ model_config:
     num_mix: 2
     optimizer: Adam
     lr: 1.0e-3
+
+test:
+    open:
+        batch_indices:
+            - 10
+            - 20
+            - 30
+    closed:
+        generation_length: 200
+        batch_indices:
+            - 10

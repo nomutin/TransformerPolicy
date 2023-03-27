@@ -11,7 +11,7 @@ from .distributions import GMM
 
 
 class PositionalEncoder(nn.Module):
-    r"""
+    """
     Embed location information in input
 
     Unlike RNNs, Transformers cannot retain position information,
@@ -56,7 +56,7 @@ class PositionalEncoder(nn.Module):
         self.register_buffer("pe", pe.transpose(0, 1))
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        x = x + self.pe[: x.size(1)]
+        x = x + self.pe[: x.size(1)]  # type: ignore
         return self.dropout(x)
 
 
@@ -129,6 +129,6 @@ class TransformerPolicy(PolicyBase):
     def training_step(self, batch: List, **kwargs: Dict) -> STEP_OUTPUT:
         inputs, targets = batch
         outputs = self.forward(inputs)
-        loss_dict = self.calc_loss(outputs, targets)
-        self.log("loss", loss_dict["loss"])
-        return loss_dict
+        loss = self.calc_loss(outputs, targets)
+        self.training_step_outputs.append(loss)
+        return loss

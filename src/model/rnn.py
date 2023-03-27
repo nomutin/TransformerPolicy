@@ -54,6 +54,6 @@ class RNNPolicy(PolicyBase):
         inputs, targets = batch
         self.init_hidden(inputs.shape[0], device=self.device)  # type: ignore
         outputs = self.forward(inputs)
-        loss_dict = self.calc_loss(outputs, targets)
-        self.log("loss", loss_dict["loss"])
-        return loss_dict
+        loss = self.calc_loss(outputs, targets)
+        self.training_step_outputs.append(loss)
+        return loss

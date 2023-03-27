@@ -1,4 +1,4 @@
-from typing import Dict, List
+from typing import List
 
 import pytorch_lightning as pl
 import torch
@@ -74,17 +74,20 @@ class PolicyBase(pl.LightningModule):
         super().__init__()
         self.cfg = cfg
         self.mlp = self.build_mlp()
+        self.training_step_outputs: List = []
 
     def configure_optimizers(self) -> torch.optim.Optimizer:
         optimizer = getattr(torch.optim, self.cfg.optimizer)
         return optimizer(self.parameters(), lr=self.cfg.lr)
 
-    def calc_loss(self, outputs: GMM, targets: torch.Tensor) -> Dict:
-        loss = -outputs.log_prob(targets).mean()
-        return {"loss": loss}
+    def calc_loss(self, outputs: GMM, targets: torch.Tensor) -> torch.Tensor:
+        return -outputs.log_prob(targets).mean()
 
     def on_train_epoch_end(self) -> None:
-        print("aaaaaaa")
+        epoch_loss = torch.stack(self.training_step_outputs).mean()
+        self.log("step", self.current_epoch)
+        self.log("loss", epoch_loss)
+        self.training_step_outputs.clear()
 
     def build_mlp(self) -> MLP:
         return MLP(
@@ -104,3 +107,9 @@ class PolicyBase(pl.LightningModule):
         mean = torch.tanh(mean.reshape(mixed_shape))
         std = nn.functional.softplus(std.reshape(mixed_shape)) + 0.1
         return GMM(probs=probs, mean=mean, std=std)
+
+    def load(self, model_name: str) -> "PolicyBase":
+        path = f"models/{model_name}/{self.__class__.__name__}.ckpt"
+        state_dict = torch.load(path)["state_dict"]
+        self.load_state_dict(state_dict)
+        return self

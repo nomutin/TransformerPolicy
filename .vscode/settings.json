@@ -2,11 +2,13 @@
     "cSpell.words": [
         "arange",
         "autoregressible",
+        "ckpt",
         "datamodule",
         "einops",
         "isort",
         "linspace",
         "logdir",
+        "matplotlib",
         "mimicplay",
         "mypy",
         "ndim",
@@ -16,10 +18,13 @@
         "optim",
         "Perceptron",
         "probs",
+        "pyplot",
+        "savefig",
         "softmax",
         "softplus",
         "tensorboard",
         "triu",
+        "unsqueeze",
         "Vaswani"
     ]
 }
