@@ -7,7 +7,6 @@ from pytorch_lightning.utilities.types import STEP_OUTPUT
 from torch import nn
 
 from .base import PolicyBase
-from .distributions import GMM
 
 
 class PositionalEncoder(nn.Module):
@@ -45,6 +44,7 @@ class PositionalEncoder(nn.Module):
         self.d_model = d_model
         self.max_seq_len = max_seq_len
         self.dropout = nn.Dropout(p=dropout)
+        self.build_positional_encoding()
 
     def build_positional_encoding(self) -> None:
         position = torch.arange(self.max_seq_len).unsqueeze(1)
@@ -60,42 +60,83 @@ class PositionalEncoder(nn.Module):
         return self.dropout(x)
 
 
-def generate_square_subsequent_mask(dim1: int, dim2: int) -> torch.Tensor:
+class GPTLayer(nn.Module):
     """
-    Generates an upper-triangular matrix of -inf, with zeros on diag.
+    Single Layer of GPT (Generative Pre-Trained transformer).
 
-    Implementation of `look-ahead masking` such as BERT or
-    causal transformer, to avoid referring to future information.
+    This class is practically equivalent to `torch.nn.TransformerDecoderLayer`,
+    which has no memory argument & always uses a causal mask.
+    Note that this is Nomura's own modification of
+    `torch/nn/modules/transformer.py/TransformerDecoderLayer()`
+    and may contain errors.
 
     References
     ----------
-    * https://pytorch.org/tutorials/beginner/transformer_tutorial.html
-    * https://a16mixx.com/企画職向けdl論文解説：transformerを使った強化学習：decision-transfo/
-    * https://arxiv.org/pdf/1810.04805.pdf
-
-    Parameters
-    ----------
-    dim1: int
-        This must be target sequence length
-    dim2: int
-        This must be encoder sequence length
-        (i.e. the length of the input sequence to the model),
-
-    Returns
-    -------
-    torch.Tensor
-        A Tensor of shape [dim1, dim2]
+    * Attention is All You Need [Vaswani+ 2017]
+    * Improving Language Understanding by Generative Pre-Train [Radford+ 2018]
     """
-    return torch.triu(torch.ones(dim1, dim2) * float("-inf"), diagonal=1)
+
+    def __init__(
+        self,
+        d_model: int,
+        nhead: int,
+        dim_feedforward: int = 512,
+        dropout: float = 0.1,
+        activation: str = "ReLU",
+    ) -> None:
+        """
+
+        Parameters
+        ----------
+        d_model : int
+            the number of expected features in the input (required).
+        nhead : int
+            the number of heads in the multiheadattention models (required).
+        dim_feedforward : int, optional
+            the dimension of the feedforward network model, by default 2048
+        dropout : float, optional
+            the dropout value, by default 0.1
+        activation : str, optional
+            the activation of the intermediate layer, by default "ReLU".
+        """
+        super().__init__()
+        self.self_attention = nn.MultiheadAttention(
+            embed_dim=d_model,
+            num_heads=nhead,
+            dropout=dropout,
+            batch_first=True,
+        )
+        self.activation = getattr(nn, activation)
+        self.feed_forward = nn.Sequential(
+            nn.Linear(d_model, dim_feedforward),
+            self.activation(),
+            nn.Dropout(dropout),
+            nn.Linear(dim_feedforward, d_model),
+            nn.Dropout(dropout),
+        )
+        self.layer_norms = nn.ModuleList(
+            [nn.LayerNorm(d_model) for _ in range(2)]
+        )
+        self.dropout = nn.Dropout(dropout)
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        x = self.layer_norms[0](x + self.sa_block(x))
+        x = self.layer_norms[1](x + self.ff_block(x))
+        return x
+
+    def sa_block(self, x: torch.Tensor) -> torch.Tensor:
+        x, *_ = self.self_attention(
+            query=x, key=x, value=x, is_causal=True, need_weights=False
+        )
+        return self.dropout(x)
+
+    def ff_block(self, x: torch.Tensor) -> torch.Tensor:
+        return self.feed_forward(x)
 
 
 class TransformerPolicy(PolicyBase):
     """
     Policy with Transformer Encoder and GMM (`a_t ~ π (a_t ~ | a_{1:t-1})`).
-
-    References
-    ----------
-    * https://pytorch.org/docs/stable/generated/torch.nn.TransformerEncoder
     """
 
     def __init__(self, cfg: DictConfig) -> None:
@@ -106,25 +147,6 @@ class TransformerPolicy(PolicyBase):
         self.positional_encoder = PositionalEncoder(
             d_model=self.cfg.hidden_size, max_seq_len=self.cfg.max_seq_len
         )
-        encoder_layer = nn.TransformerEncoderLayer(
-            d_model=self.cfg.hidden_size,
-            nhead=self.cfg.n_heads,
-            batch_first=True,
-        )
-        self.encoder = nn.TransformerEncoder(
-            encoder_layer=encoder_layer,
-            num_layers=self.cfg.num_transformer_layers,
-            norm=None,
-        )
-
-    def forward(self, in_state: torch.Tensor) -> GMM:
-        seq_len = in_state.shape[1]
-        embed = self.input_embedding_layer(in_state)
-        pos_embed = self.positional_encoder(embed)
-        mask = generate_square_subsequent_mask(seq_len, seq_len)
-        hidden = self.encoder(pos_embed, mask=mask)
-        gaussian_mixture = self.hidden_to_gmm(hidden)
-        return gaussian_mixture
 
     def training_step(self, batch: List, **kwargs: Dict) -> STEP_OUTPUT:
         inputs, targets = batch

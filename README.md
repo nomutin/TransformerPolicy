@@ -24,14 +24,16 @@ poetry run python src/train.py <model name>
 ### Test
 
 ```shell
-未実装
+poetry run python src/test.py <model name>
 ```
 
 ## References
 
-- [Transformer (paper)](https://arxiv.org/pdf/1706.03762.pdf)
+- [Attention is All You Need [Vaswani+ 2017]](https://arxiv.org/pdf/1706.03762.pdf)
+- [Improving Language Understanding by Generative Pre-Training [Radford+ 2018]](https://s3-us-west-2.amazonaws.com/openai-assets/research-covers/language-unsupervised/language_understanding_paper.pdf)
 - [Mimicplay (web)](https://mimic-play.github.io)
 - [Mimicplay (paper)](https://arxiv.org/pdf/2302.12422.pdf)
 - [Pytorch - Transformer](https://pytorch.org/docs/stable/generated/torch.nn.Transformer.html)
-- [Pytorch - TransformerEncoder](https://pytorch.org/docs/stable/generated/torch.nn.TransformerEncoder.html)
+- [Pytorch - TransformerDecoder](https://pytorch.org/docs/stable/generated/torch.nn.TransformerDecoder.html)
+- [Examining the Transformer Architecture](https://towardsdatascience.com/examining-the-transformer-architecture-part-1-the-openai-gpt-2-controversy-feceda4363bb)
 - [How to make a Transformer for time series forecasting with PyTorch](https://towardsdatascience.com/how-to-make-a-pytorch-transformer-for-time-series-forecasting-69e073d4061e)

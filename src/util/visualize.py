@@ -34,4 +34,4 @@ def save_time_series_prediction(
     fig.savefig(save_path)
     plt.clf()
     plt.close()
-    print(f'Saved time series data on {save_path}')
+    print(f"Saved time series data on {save_path}")
