@@ -12,6 +12,12 @@ from .distributions import GMM
 
 class PositionalEncoder(nn.Module):
     r"""
+    Embed location information in input
+
+    Unlike RNNs, Transformers cannot retain position information,
+    so trigonometric functions are used to embed position information.
+    [Vaswani+ 2017]
+
     References
     ----------
     * https://pytorch.org/tutorials/beginner/transformer_tutorial.html
@@ -112,9 +118,11 @@ class TransformerPolicy(PolicyBase):
         )
 
     def forward(self, in_state: torch.Tensor) -> GMM:
+        seq_len = in_state.shape[1]
         embed = self.input_embedding_layer(in_state)
         pos_embed = self.positional_encoder(embed)
-        hidden = self.encoder(pos_embed)
+        mask = generate_square_subsequent_mask(seq_len, seq_len)
+        hidden = self.encoder(pos_embed, mask=mask)
         gaussian_mixture = self.hidden_to_gmm(hidden)
         return gaussian_mixture
 
