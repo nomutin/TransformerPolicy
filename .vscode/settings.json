@@ -1,0 +1,25 @@
+{
+    "cSpell.words": [
+        "arange",
+        "autoregressible",
+        "datamodule",
+        "einops",
+        "isort",
+        "linspace",
+        "logdir",
+        "mimicplay",
+        "mypy",
+        "ndim",
+        "ndims",
+        "nhead",
+        "omegaconf",
+        "optim",
+        "Perceptron",
+        "probs",
+        "softmax",
+        "softplus",
+        "tensorboard",
+        "triu",
+        "Vaswani"
+    ]
+}
