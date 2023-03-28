@@ -1,7 +1,8 @@
 epoch: 3000
 patience: 1000
-accelerator: cpu
-devices: 1
+accelerator: gpu
+devices:
+    - 0
 
 model: TransformerPolicy
 datamodule: LissajousDataModule
@@ -23,7 +24,7 @@ model_config:
     gpt_num_layers: 4
     output_size: 2
     num_hidden_layers: 1
-    block_size: 10
+    block_size: 20
     activation: ReLU
     out_activation: Identity
     num_mix: 2

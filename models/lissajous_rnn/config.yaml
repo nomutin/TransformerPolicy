@@ -12,6 +12,8 @@ dataset_config:
     round_times: 2
     noise_std: 0.1
     batch_size: 20
+    window_size: 20
+    window_stride: 10
 
 model_config:
     input_size: 2
