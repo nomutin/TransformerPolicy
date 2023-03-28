@@ -51,7 +51,7 @@ def training(
         accelerator=cfg.accelerator,
         devices=cfg.devices,
         callbacks=[save_top, early_stopping],
-        log_every_n_steps=5,
+        log_every_n_steps=1,
     )
     trainer.fit(model=model, datamodule=datamodule)
 

@@ -144,15 +144,20 @@ class TransformerPolicy(PolicyBase):
     def __init__(self, cfg: DictConfig) -> None:
         super().__init__(cfg=cfg)
         self.input_embedding_layer = nn.Linear(
-            in_features=self.cfg.input_size, out_features=self.cfg.hidden_size
+            in_features=self.cfg.input_size,
+            out_features=self.cfg.gpt_embed_dim,
         )
         self.positional_encoder = PositionalEncoder(
-            d_model=self.cfg.hidden_size, max_seq_len=self.cfg.block_size
+            d_model=self.cfg.hidden_size,
+            max_seq_len=self.cfg.max_seq_len,
+            dropout=self.cfg.gpt_dropout,
         )
         decoder_layer = GPTLayer(
-            d_model=self.cfg.hidden_size,
+            d_model=self.cfg.gpt_embed_dim,
             nhead=self.cfg.gpt_num_heads,
             dim_feedforward=self.cfg.gpt_ff_dim,
+            activation=self.cfg.gpt_activation,
+            dropout=self.cfg.gpt_dropout,
         )
         self.gpt_layers = _get_clones(decoder_layer, self.cfg.gpt_num_layers)
 

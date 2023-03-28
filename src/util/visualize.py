@@ -24,12 +24,12 @@ def save_time_series_prediction(
     assert target.ndim == prediction.ndim == 2
 
     _, dim = target.shape
-    fig, axes = plt.subplots(dim, 1, tight_layout=True)
+    fig, axes = plt.subplots(dim, 1, figsize=(8, dim), tight_layout=True)
 
     for i, axe in enumerate(axes):
         axe.plot(target[:, i], color="gray")
         axe.plot(prediction[:, i], color="blue")
-        axe.set_title(f"Dim {dim}")
+        axe.set_title(f"Dim {i}")
 
     fig.savefig(save_path)
     plt.clf()

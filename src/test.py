@@ -22,7 +22,7 @@ def open_loop_test(model_name: str) -> None:
     model_obj = getattr(model, cfg.model)(cfg.model_config).load(model_name)
     datamodule = getattr(dataset, cfg.datamodule)(cfg.dataset_config)
     datamodule.setup()
-    inputs = datamodule.dataset.input
+    inputs = datamodule.dataset.data
 
     if hasattr(model_obj, "init_hidden"):
         batch_size = inputs.shape[0]
@@ -45,7 +45,7 @@ def closed_loop_test(model_name: str) -> None:
     model_obj = getattr(model, cfg.model)(cfg.model_config).load(model_name)
     datamodule = getattr(dataset, cfg.datamodule)(cfg.dataset_config)
     datamodule.setup()
-    inputs = datamodule.dataset.input[:, 0:1, :]
+    inputs = datamodule.dataset.data[:, 0:1, :]
 
     if isinstance(model_obj, model.RNNPolicy):
         predictions = rnn_closed_loop(
@@ -58,7 +58,7 @@ def closed_loop_test(model_name: str) -> None:
             model_obj=model_obj,
             inputs=inputs,
             generation_length=cfg.test.closed.generation_length,
-            block_size=cfg.model_config.block_size,
+            block_size=cfg.dataset_config.window_size,
         )
     else:
         raise NotImplementedError

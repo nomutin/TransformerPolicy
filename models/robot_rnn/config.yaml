@@ -1,0 +1,35 @@
+epoch: 3000
+patience: 1000
+accelerator: cpu
+devices: 1
+
+model: RNNPolicy
+datamodule: RobotDataModule
+
+dataset_config:
+    data_name: fuji_put_ball_lv4
+    batch_size: 256
+    window_size: 20
+    window_stride: 10
+
+model_config:
+    input_size: 14
+    hidden_size: 64
+    output_size: 14
+    num_hidden_layers: 2
+    activation: ReLU
+    out_activation: Identity
+    num_mix: 3
+    optimizer: Adam
+    lr: 1.0e-3
+
+test:
+    open:
+        batch_indices:
+            - 10
+            - 20
+            - 30
+    closed:
+        generation_length: 500
+        batch_indices:
+            - 10
