@@ -7,7 +7,7 @@ from einops import repeat
 from omegaconf import DictConfig
 from torch.utils.data import DataLoader, Dataset
 
-from .process_data import add_noise
+from .process_data import add_noise, sliding_window_stacking
 
 
 def create_lissajous_data(
@@ -20,11 +20,18 @@ def create_lissajous_data(
 
 
 class LissajousDataset(Dataset):
-    def __init__(self, data: torch.Tensor) -> None:
+    def __init__(
+        self, data: torch.Tensor, window_size: int, window_stride: int
+    ) -> None:
         super().__init__()
         self.data = data
-        self.input = self.data[:, :-1]
-        self.target = self.data[:, 1:]
+        stacked_data = sliding_window_stacking(
+            iterable=self.data,
+            window_size=window_size,
+            window_stride=window_stride,
+        )
+        self.input = stacked_data[:, :-1]
+        self.target = stacked_data[:, 1:]
 
     def __len__(self) -> int:
         return len(self.input)
@@ -47,7 +54,11 @@ class LissajousDataModule(pl.LightningDataModule):
             round_times=self.cfg.round_times,
         )
         noised_data = add_noise(self.data, self.cfg.noise_std)
-        self.dataset = LissajousDataset(noised_data)
+        self.dataset = LissajousDataset(
+            data=noised_data,
+            window_size=self.cfg.window_size,
+            window_stride=self.cfg.window_stride,
+        )
 
     def train_dataloader(self) -> DataLoader:
         return DataLoader(self.dataset, self.cfg.batch_size, shuffle=True)

@@ -136,19 +136,6 @@ class GPTLayer(nn.Module):
         return self.feed_forward(x)
 
 
-class GPT(nn.Module):
-    def __init__(self, decoder_layer: nn.Module, num_layers: int) -> None:
-        super().__init__()
-        self.layers = _get_clones(decoder_layer, num_layers)
-        self.num_layers = num_layers
-
-    def forward(self, tgt: torch.Tensor) -> torch.Tensor:
-        output = tgt
-        for mod in self.layers:
-            output = mod(output)
-        return output
-
-
 class TransformerPolicy(PolicyBase):
     """
     Policy with Transformer Encoder and GMM (`a_t ~ π (a_t ~ | a_{1:t-1})`).
@@ -160,7 +147,7 @@ class TransformerPolicy(PolicyBase):
             in_features=self.cfg.input_size, out_features=self.cfg.hidden_size
         )
         self.positional_encoder = PositionalEncoder(
-            d_model=self.cfg.hidden_size, max_seq_len=self.cfg.max_seq_len
+            d_model=self.cfg.hidden_size, max_seq_len=self.cfg.block_size
         )
         decoder_layer = GPTLayer(
             d_model=self.cfg.hidden_size,

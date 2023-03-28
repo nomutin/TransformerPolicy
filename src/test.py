@@ -2,8 +2,8 @@ import argparse
 
 import pytorch_lightning as pl
 import torch
-from omegaconf import OmegaConf
 import tqdm
+from omegaconf import OmegaConf
 
 import dataset
 import model
@@ -43,7 +43,6 @@ def open_loop_test(model_name: str) -> None:
 def closed_loop_test(model_name: str) -> None:
     cfg = OmegaConf.load(f"models/{model_name}/config.yaml")
     model_obj = getattr(model, cfg.model)(cfg.model_config).load(model_name)
-    model_obj.train(False)
     datamodule = getattr(dataset, cfg.datamodule)(cfg.dataset_config)
     datamodule.setup()
     inputs = datamodule.dataset.input[:, 0:1, :]
@@ -59,6 +58,7 @@ def closed_loop_test(model_name: str) -> None:
             model_obj=model_obj,
             inputs=inputs,
             generation_length=cfg.test.closed.generation_length,
+            block_size=cfg.model_config.block_size,
         )
     else:
         raise NotImplementedError
@@ -89,9 +89,11 @@ def transformer_closed_loop(
     model_obj: model.TransformerPolicy,
     inputs: torch.Tensor,
     generation_length: int,
+    block_size: int,
 ) -> torch.Tensor:
     for _ in tqdm.tqdm(range(generation_length)):
-        output = model_obj.forward(inputs)
+        model_input = inputs[:, -block_size:]
+        output = model_obj.forward(model_input)
         prediction = output.sample()[:, -1:, :]
         inputs = torch.cat([inputs, prediction], dim=1)
     return inputs

@@ -7,11 +7,13 @@ model: TransformerPolicy
 datamodule: LissajousDataModule
 
 dataset_config:
+    batch_size: 32
     data_num: 100
     points_num: 51
     round_times: 2
     noise_std: 0.1
-    batch_size: 20
+    window_size: 20
+    window_stride: 10
 
 model_config:
     input_size: 2
@@ -19,9 +21,9 @@ model_config:
     gpt_num_heads: 4
     gpt_ff_dim: 64
     gpt_num_layers: 4
-    max_seq_len: 256
     output_size: 2
     num_hidden_layers: 1
+    block_size: 10
     activation: ReLU
     out_activation: Identity
     num_mix: 2
