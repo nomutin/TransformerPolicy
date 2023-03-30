@@ -7,7 +7,12 @@ import torch
 from omegaconf import DictConfig
 from torch.utils.data import DataLoader, Dataset
 
-from .process_data import add_noise, sliding_window_stacking
+from .process_data import (
+    add_noise,
+    get_action_dim_maxmin,
+    normalize_action,
+    sliding_window_stacking,
+)
 
 DRIVE_FILES = {
     "fuji_put_ball_lv4": "19qVl1HiRzviqT414SLl-pKP392nyoJLx",
@@ -51,7 +56,7 @@ class RobotDataset(Dataset):
         return len(self.input)
 
     def __getitem__(self, idx: int) -> Tuple[torch.Tensor, torch.Tensor]:
-        input_data = add_noise(self.input[idx], 0.3)
+        input_data = add_noise(self.input[idx], 0.2)
         target_data = self.target[idx]
         return input_data, target_data
 
@@ -62,7 +67,9 @@ class RobotDataModule(pl.LightningDataModule):
         self.cfg = cfg
 
     def setup(self, stage: str = "train") -> None:
-        self.data = get_robot_data(self.cfg.data_name)
+        raw_data = get_robot_data(self.cfg.data_name)
+        max_tensor, min_tensor = get_action_dim_maxmin(raw_data)
+        self.data = normalize_action(raw_data, max_tensor, min_tensor)
         self.dataset = RobotDataset(
             data=self.data,
             window_size=self.cfg.window_size,

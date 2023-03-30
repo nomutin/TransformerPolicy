@@ -22,7 +22,7 @@ def open_loop_test(model_name: str) -> None:
     model_obj = getattr(model, cfg.model)(cfg.model_config).load(model_name)
     datamodule = getattr(dataset, cfg.datamodule)(cfg.dataset_config)
     datamodule.setup()
-    inputs = datamodule.dataset.data
+    inputs = datamodule.data
 
     if hasattr(model_obj, "init_hidden"):
         batch_size = inputs.shape[0]
@@ -34,7 +34,7 @@ def open_loop_test(model_name: str) -> None:
     for idx in cfg.test.open.batch_indices:
         save_path = f"reports/{model_name}/open_loop_test_{idx}.png"
         save_time_series_prediction(
-            target=datamodule.dataset.target[idx],
+            target=datamodule.data[idx],
             prediction=prediction[idx],
             save_path=save_path,
         )
@@ -45,7 +45,7 @@ def closed_loop_test(model_name: str) -> None:
     model_obj = getattr(model, cfg.model)(cfg.model_config).load(model_name)
     datamodule = getattr(dataset, cfg.datamodule)(cfg.dataset_config)
     datamodule.setup()
-    inputs = datamodule.dataset.data[:, 0:1, :]
+    inputs = datamodule.data[:, 0:1, :]
 
     if isinstance(model_obj, model.RNNPolicy):
         predictions = rnn_closed_loop(
@@ -66,7 +66,7 @@ def closed_loop_test(model_name: str) -> None:
     for idx in cfg.test.closed.batch_indices:
         save_path = f"reports/{model_name}/closed_loop_test_{idx}.png"
         save_time_series_prediction(
-            target=datamodule.dataset.target[idx],
+            target=datamodule.data[idx],
             prediction=predictions[idx],
             save_path=save_path,
         )

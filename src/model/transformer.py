@@ -35,7 +35,7 @@ class PositionalEncoder(nn.Module):
         Parameters
         ----------
         d_model: int
-            The dimension of the output of sub-layers (Vaswani et al, 2017)
+            The dimension of the output of sub-layers
         max_seq_len: int
             the maximum length of the input sequences
         dropout: float
@@ -148,7 +148,7 @@ class TransformerPolicy(PolicyBase):
             out_features=self.cfg.gpt_embed_dim,
         )
         self.positional_encoder = PositionalEncoder(
-            d_model=self.cfg.hidden_size,
+            d_model=self.cfg.gpt_embed_dim,
             max_seq_len=self.cfg.max_seq_len,
             dropout=self.cfg.gpt_dropout,
         )
